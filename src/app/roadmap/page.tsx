@@ -14,48 +14,37 @@ interface Step {
     duration: string;
 }
 
-const MOCK_STEPS: Record<string, Step[]> = {
-    default: [
-        { title: "Foundations", description: "Learn the basics of the field.", duration: "1-2 Months" },
-        { title: "Advanced Concepts", description: "Deep dive into complex topics.", duration: "3-4 Months" },
-        { title: "Practical Projects", description: "Build real-world applications.", duration: "2 Months" },
-        { title: "Certification", description: "Get recognized for your skills.", duration: "1 Month" },
-        { title: "Job Hunt", description: "Prepare resume and start applying.", duration: "Ongoing" },
-    ],
-    "medical": [
-        { title: "Biology & Chemistry", description: "Master high school sciences.", duration: "Year 1-2" },
-        { title: "UNT Preparation", description: "Focus on Biology profile subjects.", duration: "Year 11" },
-        { title: "Medical School", description: "Apply to top medical universities.", duration: "5+ Years" },
-        { title: "Residency", description: "Specialize in your chosen field.", duration: "2-4 Years" },
-    ],
-    "it": [
-        { title: "Programming Basics", description: "Python, C++, or Java.", duration: "2-3 Months" },
-        { title: "Data Structures", description: "Algorithms and logic.", duration: "3 Months" },
-        { title: "Web/Mobile Dev", description: "Pick a track (Frontend/Backend).", duration: "6 Months" },
-        { title: "Internship", description: "Get real experience.", duration: "3 Months" },
-    ],
-};
 
 export default function RoadmapPage() {
     const [goal, setGoal] = useState("");
     const [loading, setLoading] = useState(false);
     const [steps, setSteps] = useState<Step[] | null>(null);
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         if (!goal.trim()) return;
         setLoading(true);
         setSteps(null);
 
-        // Simulate AI delay
-        setTimeout(() => {
-            const lowerGoal = goal.toLowerCase();
-            let result = MOCK_STEPS.default;
-            if (lowerGoal.includes("med") || lowerGoal.includes("doctor")) result = MOCK_STEPS.medical;
-            if (lowerGoal.includes("it") || lowerGoal.includes("code") || lowerGoal.includes("dev")) result = MOCK_STEPS.it;
+        try {
+            const response = await fetch("/api/roadmap", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ goal }),
+            });
 
-            setSteps(result);
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || "Failed to generate roadmap");
+            }
+
+            const data = await response.json();
+            setSteps(data);
+        } catch (error) {
+            console.error("Error generating roadmap:", error);
+            alert("Произошла ошибка при генерации пути. Убедитесь, что API ключ установлен.");
+        } finally {
             setLoading(false);
-        }, 2000);
+        }
     };
 
     return (

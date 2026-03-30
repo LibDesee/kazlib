@@ -4,17 +4,10 @@ import { useState } from "react";
 import { PageLayout } from "@/components/shared/page-layout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassInput } from "@/components/ui/glass-input";
-import { GlassButton } from "@/components/ui/glass-button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Search, MoreVertical, Phone, Video } from "lucide-react";
+import { Send, MoreVertical, Phone, Video } from "lucide-react";
 import Link from "next/link";
-
-const CONTACTS = [
-    { id: 1, name: "Aizere M.", lastMessage: "Did you finish the math hw?", time: "10:30", avatar: "A", status: "online" },
-    { id: 2, name: "Mr. Smith", lastMessage: "Don't forget the deadline.", time: "Yesterday", avatar: "S", status: "offline" },
-    { id: 3, name: "Basketball Team", lastMessage: "Practice at 5 PM!", time: "Mon", avatar: "B", status: "online" },
-    { id: 4, name: "Study Group", lastMessage: "Let's meet at the library.", time: "Sun", avatar: "SG", status: "offline" },
-];
+import { USERS } from "@/lib/data/users";
 
 const MOCK_MESSAGES = [
     { id: 1, text: "Hey! Did you check the new schedule?", sender: "them", time: "10:25" },
@@ -27,10 +20,27 @@ export default function SocialPage() {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState(MOCK_MESSAGES);
 
+    // Filter out the current user (ID 999) from contacts list
+    const contacts = USERS.filter(u => u.id !== 999);
+
     const handleSendMessage = () => {
-        if (!message.trim()) return;
-        setMessages([...messages, { id: messages.length + 1, text: message, sender: "me", time: "Now" }]);
+        if (!message.trim() || !selectedContact) return;
+        
+        const myMessage = { id: messages.length + 1, text: message, sender: "me", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        setMessages(prev => [...prev, myMessage]);
         setMessage("");
+
+        // Simulate real response from the other user
+        setTimeout(() => {
+            const contactName = USERS.find(u => u.id === selectedContact)?.name;
+            const responseMessage = { 
+                id: messages.length + 2, 
+                text: `Привет! Я ${contactName}. Спасибо за сообщение, я скоро отвечу!`, 
+                sender: "them", 
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            };
+            setMessages(prev => [...prev, responseMessage]);
+        }, 1500);
     };
 
     return (
@@ -41,7 +51,7 @@ export default function SocialPage() {
                     <GlassInput placeholder="Search messages..." className="pl-10 h-10" />
 
                     <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                        {CONTACTS.map((contact) => (
+                        {contacts.map((contact) => (
                             <div key={contact.id} className="group relative">
                                 <GlassCard
                                     className={`p-4 cursor-pointer hover:bg-white/10 flex items-center gap-4 transition-colors ${selectedContact === contact.id ? 'bg-white/10 border-accent-primary/50' : ''}`}
@@ -58,9 +68,9 @@ export default function SocialPage() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline mb-1">
                                             <h3 className="font-semibold text-white truncate">{contact.name}</h3>
-                                            <span className="text-xs text-white/40">{contact.time}</span>
+                                            <span className="text-xs text-white/40">{contact.lastMessageTime || "Now"}</span>
                                         </div>
-                                        <p className="text-sm text-white/50 truncate">{contact.lastMessage}</p>
+                                        <p className="text-sm text-white/50 truncate">{contact.lastMessage || "No messages yet."}</p>
                                     </div>
                                 </GlassCard>
                                 <Link
@@ -93,13 +103,15 @@ export default function SocialPage() {
                                             ← Back
                                         </button>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                                                {CONTACTS.find(c => c.id === selectedContact)?.avatar}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-white">{CONTACTS.find(c => c.id === selectedContact)?.name}</h3>
-                                                <span className="text-xs text-green-400">Online</span>
-                                            </div>
+                                            <Link href={`/u/${selectedContact}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                                    {USERS.find(c => c.id === selectedContact)?.avatar}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-white">{USERS.find(c => c.id === selectedContact)?.name}</h3>
+                                                    <span className="text-xs text-green-400">Online</span>
+                                                </div>
+                                            </Link>
                                         </div>
                                     </div>
                                     <div className="flex gap-4 text-white/60">

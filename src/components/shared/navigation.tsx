@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useState } from "react";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 
 export function Navigation() {
@@ -36,6 +37,7 @@ export function Navigation() {
         { name: t.nav.grades, href: "/grades", icon: Calculator },
         { name: t.nav.school, href: "/school", icon: School },
         { name: t.nav.social, href: "/social", icon: MessageCircle },
+        ...(user?.role === "Teacher" ? [{ name: "Teacher", href: "/teacher", icon: GraduationCap }] : []),
     ];
 
     if (!user || pathname === "/login") return null;
@@ -77,74 +79,58 @@ export function Navigation() {
                         })}
                     </div>
 
-                    {/* Profile Menu */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsProfileOpen(!isProfileOpen)}
-                            className="flex items-center gap-3 p-1 rounded-full hover:bg-white/5 transition-colors"
-                        >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center text-white font-bold shadow-lg">
-                                {user.avatar}
-                            </div>
-                        </button>
+                    <div className="flex items-center gap-3">
+                        <LanguageSwitcher className="hidden md:flex" />
 
-                        <AnimatePresence>
-                            {isProfileOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 top-14 w-64 glass-panel rounded-2xl p-2 bg-black/90 border-white/10 flex flex-col gap-1 shadow-2xl"
-                                    onMouseLeave={() => setIsProfileOpen(false)}
-                                >
-                                    <div className="px-4 py-3 border-b border-white/10 mb-1">
-                                        <p className="font-medium text-white">{user.name}</p>
-                                        <p className="text-xs text-white/50">{user.email}</p>
-                                    </div>
+                        {/* Profile Menu */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex items-center gap-3 p-1 rounded-full hover:bg-white/5 transition-colors"
+                            >
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center text-white font-bold shadow-lg">
+                                    {user.avatar}
+                                </div>
+                            </button>
 
-                                    <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-colors">
-                                        <User size={18} /> Profile
-                                    </Link>
-                                    <button onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-colors w-full text-left">
-                                        <Settings size={18} /> Settings
-                                    </button>
-                                    <div className="h-px bg-white/10 my-1" />
-
-                                    <div className="px-4 py-2 flex items-center justify-between">
-                                        <span className="text-white/60 text-sm">Language</span>
-                                        <div className="flex gap-1 bg-white/5 rounded-lg p-1">
-                                            <button
-                                                onClick={() => setLanguage("en")}
-                                                className={cn(
-                                                    "px-2 py-1 rounded text-xs transition-colors",
-                                                    language === "en" ? "bg-accent-primary text-white" : "text-white/40 hover:text-white"
-                                                )}
-                                            >
-                                                EN
-                                            </button>
-                                            <button
-                                                onClick={() => setLanguage("ru")}
-                                                className={cn(
-                                                    "px-2 py-1 rounded text-xs transition-colors",
-                                                    language === "ru" ? "bg-accent-primary text-white" : "text-white/40 hover:text-white"
-                                                )}
-                                            >
-                                                RU
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={logout}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors w-full text-left"
+                            <AnimatePresence>
+                                {isProfileOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute right-0 top-14 w-64 glass-panel rounded-2xl p-2 bg-black/90 border-white/10 flex flex-col gap-1 shadow-2xl"
+                                        onMouseLeave={() => setIsProfileOpen(false)}
                                     >
-                                        <LogOut size={18} /> {t.nav.logout}
-                                    </button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                                        <div className="px-4 py-3 border-b border-white/10 mb-1">
+                                            <p className="font-medium text-white">{user.name}</p>
+                                            <p className="text-xs text-white/50">{user.email}</p>
+                                        </div>
 
+                                        <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-colors">
+                                            <User size={18} /> {t.profile.title}
+                                        </Link>
+                                        <button onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-colors w-full text-left">
+                                            <Settings size={18} /> {t.nav.settings}
+                                        </button>
+                                        <div className="h-px bg-white/10 my-1" />
+
+                                        <div className="px-4 py-2 flex items-center justify-between md:hidden">
+                                            <span className="text-white/60 text-sm">Language</span>
+                                            <LanguageSwitcher />
+                                        </div>
+
+                                        <button
+                                            onClick={logout}
+                                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors w-full text-left"
+                                        >
+                                            <LogOut size={18} /> {t.nav.logout}
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>

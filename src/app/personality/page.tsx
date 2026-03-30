@@ -10,56 +10,56 @@ import { BrainCircuit, Check, RefreshCcw } from "lucide-react";
 const QUESTIONS = [
     {
         id: 1,
-        question: "How do you prefer to solve problems?",
+        question: "Как вы предпочитаете решать проблемы?",
         options: [
-            { id: "a", text: "Analyzing data and logic", type: "tech" },
-            { id: "b", text: "Discussing with others", type: "social" },
-            { id: "c", text: "Creating something visual", type: "creative" },
-            { id: "d", text: "Hands-on experimentation", type: "science" },
+            { id: "a", text: "Анализ данных и логика", type: "tech" },
+            { id: "b", text: "Обсуждение с другими", type: "social" },
+            { id: "c", text: "Создание чего-то визуального", type: "creative" },
+            { id: "d", text: "Практические эксперименты", type: "science" },
         ],
     },
     {
         id: 2,
-        question: "What's your favorite school subject?",
+        question: "Какой ваш любимый школьный предмет?",
         options: [
-            { id: "a", text: "Mathematics / Informatics", type: "tech" },
-            { id: "b", text: "Literature / History", type: "social" },
-            { id: "c", text: "Art / Design", type: "creative" },
-            { id: "d", text: "Physics / Biology", type: "science" },
+            { id: "a", text: "Математика / Информатика", type: "tech" },
+            { id: "b", text: "Литература / История", type: "social" },
+            { id: "c", text: "Искусство / Дизайн", type: "creative" },
+            { id: "d", text: "Физика / Биология", type: "science" },
         ],
     },
     {
         id: 3,
-        question: "In a group project, you are usually...",
+        question: "В групповом проекте вы обычно...",
         options: [
-            { id: "a", text: "The Organizer / Leader", type: "social" },
-            { id: "b", text: "The Builder / Coder", type: "tech" },
-            { id: "c", text: "The Designer / Presenter", type: "creative" },
-            { id: "d", text: "The Researcher", type: "science" },
+            { id: "a", text: "Организатор / Лидер", type: "social" },
+            { id: "b", text: "Строитель / Программист", type: "tech" },
+            { id: "c", text: "Дизайнер / Презентатор", type: "creative" },
+            { id: "d", text: "Исследователь", type: "science" },
         ],
     },
 ];
 
 const RESULTS: Record<string, { title: string; desc: string; careers: string[] }> = {
     tech: {
-        title: "The Innovator (Tech)",
-        desc: "You love logic, systems, and building the future with technology.",
-        careers: ["Software Engineer", "Data Scientist", "Cybersecurity Analyst"],
+        title: "Инноватор (IT)",
+        desc: "Вы любите логику, системы и создание будущего с помощью технологий.",
+        careers: ["Программный инженер", "Data Scientist", "Аналитик кибербезопасности"],
     },
     social: {
-        title: "The Connector (Social)",
-        desc: "You excel at understanding people and leading teams.",
-        careers: ["Psychologist", "HR Manager", "Public Relations"],
+        title: "Связующее звено (Социальное)",
+        desc: "Вы отлично понимаете людей и умеете руководить командами.",
+        careers: ["Психолог", "HR-менеджер", "Связи с общественностью"],
     },
     creative: {
-        title: "The Creator (Arts)",
-        desc: "You have a vivid imagination and an eye for aesthetics.",
-        careers: ["UX/UI Designer", "Architect", "Digital Artist"],
+        title: "Творец (Искусство)",
+        desc: "У вас живое воображение и чувство эстетики.",
+        careers: ["UX/UI дизайнер", "Архитектор", "Цифровой художник"],
     },
     science: {
-        title: "The Explorer (Science)",
-        desc: "You are curious about how the world works and love discovery.",
-        careers: ["Biotechnologist", "Researcher", "Surgeon"],
+        title: "Исследователь (Наука)",
+        desc: "Вам интересно, как устроен мир, и вы любите открытия.",
+        careers: ["Биотехнолог", "Исследователь", "Хирург"],
     },
 };
 
@@ -106,7 +106,7 @@ export default function PersonalityPage() {
                             className="w-full"
                         >
                             <div className="mb-8 text-center">
-                                <div className="text-accent-secondary text-sm font-bold tracking-widest uppercase mb-2">Question {step + 1} of {QUESTIONS.length}</div>
+                                <div className="text-accent-secondary text-sm font-bold tracking-widest uppercase mb-2">Вопрос {step + 1} из {QUESTIONS.length}</div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                     <motion.div
                                         className="h-full bg-accent-primary"
@@ -152,7 +152,7 @@ export default function PersonalityPage() {
                             <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">{RESULTS[result].desc}</p>
 
                             <GlassCard className="p-8 mb-8">
-                                <h3 className="text-xl font-semibold text-white mb-4">Recommended Careers</h3>
+                                <h3 className="text-xl font-semibold text-white mb-4">Рекомендуемые профессии</h3>
                                 <div className="flex flex-wrap gap-2 justify-center">
                                     {RESULTS[result].careers.map((career) => (
                                         <span key={career} className="px-4 py-2 rounded-full bg-white/10 text-white border border-white/10">
@@ -163,7 +163,7 @@ export default function PersonalityPage() {
                             </GlassCard>
 
                             <GlassButton onClick={resetQuiz} variant="secondary">
-                                <RefreshCcw size={18} /> Retake Test
+                                <RefreshCcw size={18} /> Пройти тест заново
                             </GlassButton>
                         </motion.div>
                     )}

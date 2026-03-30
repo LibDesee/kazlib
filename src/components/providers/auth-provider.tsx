@@ -2,10 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { USERS } from "@/lib/data/users";
 
 interface UserProfile {
     name: string;
-    role: "Student" | "Teacher";
+    role: "Student" | "Teacher" | "Admin";
     grade: string;
     school: string;
     avatar: string;
@@ -76,8 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [pathname, router]);
 
     const login = (name: string) => {
-        // Determine mock profile based on input, for now just use default
-        const newUser = { ...MOCK_USER, name: name || MOCK_USER.name };
+        // Find matching predefined user
+        const predefinedUser = USERS.find(u => u.name.toLowerCase() === name.toLowerCase());
+        
+        const newUser: UserProfile = predefinedUser ? {
+            name: predefinedUser.name,
+            role: predefinedUser.role as "Student" | "Teacher" | "Admin",
+            grade: predefinedUser.grade || "",
+            school: predefinedUser.school || "",
+            avatar: predefinedUser.avatar,
+            email: predefinedUser.email || "",
+            phone: predefinedUser.phone || "",
+            interests: predefinedUser.interests || [],
+        } : { ...MOCK_USER, name };
+
         setUser(newUser);
         localStorage.setItem("kazlib_user", JSON.stringify(newUser));
         router.push("/");

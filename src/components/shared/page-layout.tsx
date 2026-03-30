@@ -1,6 +1,7 @@
 "use client";
 
 import { Navigation } from "./navigation";
+import { MiniChat } from "./mini-chat";
 import { motion } from "framer-motion";
 
 export function PageLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +24,8 @@ export function PageLayout({ children }: { children: React.ReactNode }) {
             >
                 {children}
             </motion.main>
+
+            <MiniChat />
         </div>
     );
 }

@@ -7,48 +7,44 @@ import { GlassInput } from "@/components/ui/glass-input";
 import { GlassTabs } from "@/components/ui/glass-tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Utensils, Search, User, Clock } from "lucide-react";
+import { USERS } from "@/lib/data/users";
+import Link from "next/link";
+import { useLanguage } from "@/components/providers/language-provider";
+
 
 export default function SchoolPage() {
     const [activeTab, setActiveTab] = useState("schedule");
     const [searchQuery, setSearchQuery] = useState("");
+    const { t } = useLanguage();
 
     const schedule = [
-        { time: "08:00 - 08:45", subject: "Mathematics", room: "305", type: "Core" },
-        { time: "08:55 - 09:40", subject: "Physics", room: "Physics Lab", type: "Core" },
-        { time: "10:00 - 10:45", subject: "History of Kazakhstan", room: "204", type: "Humanities" },
-        { time: "11:05 - 11:50", subject: "Computer Science", room: "IT Lab 1", type: "Elective" },
-        { time: "12:00 - 12:45", subject: "Lunch Break", room: "Canteen", type: "Break" },
-        { time: "13:00 - 13:45", subject: "English", room: "401", type: "Language" },
+        { subject: "Mathematics", time: "08:00 - 08:45", room: "305", type: "Lesson" },
+        { subject: "Physics", time: "09:00 - 09:45", room: "210", type: "Lesson" },
+        { subject: "Chemistry", time: "10:00 - 10:45", room: "315", type: "Lab" },
+        { subject: "English", time: "12:00 - 12:45", room: "402", type: "Lesson" },
     ];
 
     const menu = [
-        { name: "Plov with Beef", price: "800 ₸", type: "Main" },
-        { name: "Chicken Soup", price: "450 ₸", type: "Soup" },
-        { name: "Caesar Salad", price: "600 ₸", type: "Salad" },
-        { name: "Samsas (Cheese/Meat)", price: "250 ₸", type: "Snack" },
+        { name: "Beef Lagman", price: "1200 ₸", type: "Main" },
+        { name: "Chicken Salad", price: "800 ₸", type: "Salad" },
+        { name: "Borscht Soup", price: "600 ₸", type: "Soup" },
         { name: "Berry Compote", price: "150 ₸", type: "Drink" },
     ];
 
-    const users = [
-        { name: "Alikhan B.", role: "Student", grade: "11A" },
-        { name: "Dana K.", role: "Student", grade: "10B" },
-        { name: "Mr. Smith", role: "Teacher", grade: "Physics" },
-        { name: "Aizere M.", role: "Student", grade: "11A" },
-    ];
 
-    const filteredUsers = users.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredUsers = USERS.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()) && u.id !== 999);
 
     return (
         <PageLayout>
             <div className="max-w-5xl mx-auto space-y-8">
                 <header className="flex flex-col items-center space-y-4">
-                    <h1 className="text-4xl font-bold text-white">School Ecosystem</h1>
+                    <h1 className="text-4xl font-bold text-white">{t.school.title}</h1>
 
                     <GlassTabs
                         tabs={[
-                            { id: "schedule", label: "Schedule" },
-                            { id: "canteen", label: "Canteen" },
-                            { id: "search", label: "Find Users" }
+                            { id: "schedule", label: t.school.schedule },
+                            { id: "canteen", label: t.school.canteen },
+                            { id: "search", label: t.school.findUsers }
                         ]}
                         activeTab={activeTab}
                         onTabChange={setActiveTab}
@@ -66,7 +62,7 @@ export default function SchoolPage() {
                             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                         >
                             <div className="lg:col-span-2 space-y-4">
-                                <h3 className="text-xl font-bold text-white mb-2">Today's Classes</h3>
+                                <h3 className="text-xl font-bold text-white mb-2">{t.school.todaysClasses}</h3>
                                 {schedule.map((item, i) => (
                                     <GlassCard key={i} className="flex items-center justify-between p-4 group hover:bg-white/5">
                                         <div className="flex items-center gap-4">
@@ -87,11 +83,11 @@ export default function SchoolPage() {
                             </div>
 
                             <div className="lg:col-span-1 space-y-4">
-                                <h3 className="text-xl font-bold text-white mb-2">Events Calendar</h3>
+                                <h3 className="text-xl font-bold text-white mb-2">{t.school.eventsCalendar}</h3>
                                 <GlassCard className="p-0 overflow-hidden">
                                     <div className="p-4 bg-accent-primary/20 text-center font-bold text-white">October 2026</div>
                                     <div className="p-4 grid grid-cols-7 gap-1 text-center text-sm">
-                                        {["M", "T", "W", "T", "F", "S", "S"].map(d => <div key={d} className="text-white/40">{d}</div>)}
+                                        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <div key={`${d}-${i}`} className="text-white/40">{d}</div>)}
                                         {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                                             <div key={d} className={`p-2 rounded-full cursor-pointer hover:bg-white/10 ${d === 14 ? 'bg-accent-secondary text-white' : 'text-white/80'}`}>
                                                 {d}
@@ -153,7 +149,7 @@ export default function SchoolPage() {
                             className="space-y-6"
                         >
                             <GlassInput
-                                placeholder="Search for students or teachers..."
+                                placeholder={t.school.searchPlaceholder}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10"
@@ -161,19 +157,21 @@ export default function SchoolPage() {
 
                             <div className="grid grid-cols-1 gap-3">
                                 {filteredUsers.length > 0 ? (
-                                    filteredUsers.map((user, i) => (
-                                        <GlassCard key={i} className="flex items-center gap-4 p-4 hover:border-accent-primary/50 cursor-pointer">
-                                            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-accent-primary to-accent-secondary flex items-center justify-center text-white font-bold text-lg">
-                                                {user.name[0]}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-white">{user.name}</h3>
-                                                <p className="text-sm text-white/50">{user.role} • {user.grade}</p>
-                                            </div>
-                                        </GlassCard>
+                                    filteredUsers.map((user) => (
+                                        <Link key={user.id} href={`/u/${user.id}`}>
+                                            <GlassCard className="flex items-center gap-4 p-4 hover:border-accent-primary/50 cursor-pointer transition-colors group">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-accent-primary to-accent-secondary flex items-center justify-center text-white font-bold text-lg">
+                                                    {user.avatar}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-white group-hover:text-accent-primary transition-colors">{user.name}</h3>
+                                                    <p className="text-sm text-white/50">{user.role} • {user.grade || user.school}</p>
+                                                </div>
+                                            </GlassCard>
+                                        </Link>
                                     ))
                                 ) : (
-                                    <div className="text-center text-white/40 py-8">No users found.</div>
+                                    <div className="text-center text-white/40 py-8">{t.school.noUsersFound}</div>
                                 )}
                             </div>
                         </motion.div>
@@ -183,3 +181,4 @@ export default function SchoolPage() {
         </PageLayout>
     );
 }
+

@@ -8,15 +8,24 @@ import { GlassButton } from "@/components/ui/glass-button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { USERS } from "@/lib/data/users";
+
 export default function LoginPage() {
     const { login } = useAuth();
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (password.length > 0) {
-            login(name);
+        setError("");
+        
+        const userFound = USERS.find(u => u.name.toLowerCase() === name.toLowerCase() && "123456" === password);
+        
+        if (userFound) {
+            login(userFound.name);
+        } else {
+            setError("Invalid username or password. Try 'Aizere M.' with '123456'");
         }
     };
 
@@ -42,6 +51,11 @@ export default function LoginPage() {
                     </div>
 
                     <form onSubmit={handleLogin} className="w-full space-y-4">
+                        {error && (
+                            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-left animate-shake">
+                                {error}
+                            </div>
+                        )}
                         <div className="space-y-2 text-left">
                             <GlassInput
                                 placeholder="Username"
@@ -60,7 +74,12 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <GlassButton variant="primary" className="w-full shadow-[0_4px_20px_rgba(59,130,246,0.4)] hover:shadow-[0_4px_25px_rgba(59,130,246,0.6)]" size="lg">
+                        <GlassButton 
+                            type="submit"
+                            variant="primary" 
+                            className="w-full shadow-[0_4px_20px_rgba(59,130,246,0.4)] hover:shadow-[0_4px_25px_rgba(59,130,246,0.6)]" 
+                            size="lg"
+                        >
                             Sign In <ArrowRight size={18} />
                         </GlassButton>
                     </form>
