@@ -5,65 +5,14 @@ import { PageLayout } from "@/components/shared/page-layout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { GlassButton } from "@/components/ui/glass-button";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, Check, RefreshCcw } from "lucide-react";
-
-const QUESTIONS = [
-    {
-        id: 1,
-        question: "Как вы предпочитаете решать проблемы?",
-        options: [
-            { id: "a", text: "Анализ данных и логика", type: "tech" },
-            { id: "b", text: "Обсуждение с другими", type: "social" },
-            { id: "c", text: "Создание чего-то визуального", type: "creative" },
-            { id: "d", text: "Практические эксперименты", type: "science" },
-        ],
-    },
-    {
-        id: 2,
-        question: "Какой ваш любимый школьный предмет?",
-        options: [
-            { id: "a", text: "Математика / Информатика", type: "tech" },
-            { id: "b", text: "Литература / История", type: "social" },
-            { id: "c", text: "Искусство / Дизайн", type: "creative" },
-            { id: "d", text: "Физика / Биология", type: "science" },
-        ],
-    },
-    {
-        id: 3,
-        question: "В групповом проекте вы обычно...",
-        options: [
-            { id: "a", text: "Организатор / Лидер", type: "social" },
-            { id: "b", text: "Строитель / Программист", type: "tech" },
-            { id: "c", text: "Дизайнер / Презентатор", type: "creative" },
-            { id: "d", text: "Исследователь", type: "science" },
-        ],
-    },
-];
-
-const RESULTS: Record<string, { title: string; desc: string; careers: string[] }> = {
-    tech: {
-        title: "Инноватор (IT)",
-        desc: "Вы любите логику, системы и создание будущего с помощью технологий.",
-        careers: ["Программный инженер", "Data Scientist", "Аналитик кибербезопасности"],
-    },
-    social: {
-        title: "Связующее звено (Социальное)",
-        desc: "Вы отлично понимаете людей и умеете руководить командами.",
-        careers: ["Психолог", "HR-менеджер", "Связи с общественностью"],
-    },
-    creative: {
-        title: "Творец (Искусство)",
-        desc: "У вас живое воображение и чувство эстетики.",
-        careers: ["UX/UI дизайнер", "Архитектор", "Цифровой художник"],
-    },
-    science: {
-        title: "Исследователь (Наука)",
-        desc: "Вам интересно, как устроен мир, и вы любите открытия.",
-        careers: ["Биотехнолог", "Исследователь", "Хирург"],
-    },
-};
+import { BrainCircuit, RefreshCcw } from "lucide-react";
+import { PERSONALITY_QUESTIONS, PERSONALITY_RESULTS } from "@/lib/data/personality";
+import { useLanguage } from "@/components/providers/language-provider";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export default function PersonalityPage() {
+    const { language } = useLanguage();
+    const { user, updateProfile } = useAuth();
     const [step, setStep] = useState(0);
     const [answers, setAnswers] = useState<string[]>([]);
     const [result, setResult] = useState<string | null>(null);
@@ -72,7 +21,7 @@ export default function PersonalityPage() {
         const newAnswers = [...answers, type];
         setAnswers(newAnswers);
 
-        if (step < QUESTIONS.length - 1) {
+        if (step < PERSONALITY_QUESTIONS.length - 1) {
             setStep(step + 1);
         } else {
             calculateResult(newAnswers);
@@ -80,11 +29,13 @@ export default function PersonalityPage() {
     };
 
     const calculateResult = (finalAnswers: string[]) => {
-        // Simple mode: find most frequent answer
         const counts: Record<string, number> = {};
         finalAnswers.forEach((a) => (counts[a] = (counts[a] || 0) + 1));
         const winner = Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b));
         setResult(winner);
+
+        // Optional: save result to user profile if they want (could be an interests update)
+        // This is a nice-to-have but not strictly required
     };
 
     const resetQuiz = () => {
@@ -106,20 +57,24 @@ export default function PersonalityPage() {
                             className="w-full"
                         >
                             <div className="mb-8 text-center">
-                                <div className="text-accent-secondary text-sm font-bold tracking-widest uppercase mb-2">Вопрос {step + 1} из {QUESTIONS.length}</div>
+                                <div className="text-accent-secondary text-sm font-bold tracking-widest uppercase mb-2">
+                                    {language === "ru" ? "Вопрос" : "Question"} {step + 1} / {PERSONALITY_QUESTIONS.length}
+                                </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                     <motion.div
                                         className="h-full bg-accent-primary"
                                         initial={{ width: 0 }}
-                                        animate={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }}
+                                        animate={{ width: `${((step + 1) / PERSONALITY_QUESTIONS.length) * 100}%` }}
                                     />
                                 </div>
                             </div>
 
                             <GlassCard className="p-8">
-                                <h2 className="text-2xl font-bold text-white mb-8 text-center">{QUESTIONS[step].question}</h2>
+                                <h2 className="text-2xl font-bold text-white mb-8 text-center">
+                                    {PERSONALITY_QUESTIONS[step].question[language as keyof typeof PERSONALITY_QUESTIONS[0]["question"]] || PERSONALITY_QUESTIONS[step].question.en}
+                                </h2>
                                 <div className="grid grid-cols-1 gap-4">
-                                    {QUESTIONS[step].options.map((option) => (
+                                    {PERSONALITY_QUESTIONS[step].options.map((option) => (
                                         <GlassButton
                                             key={option.id}
                                             variant="glass"
@@ -130,7 +85,9 @@ export default function PersonalityPage() {
                                                 <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-sm font-medium group-hover:bg-accent-primary group-hover:border-transparent transition-colors">
                                                     {option.id.toUpperCase()}
                                                 </div>
-                                                <span className="text-lg">{option.text}</span>
+                                                <span className="text-lg">
+                                                    {option.text[language as keyof typeof option.text] || option.text.en}
+                                                </span>
                                             </div>
                                         </GlassButton>
                                     ))}
@@ -148,13 +105,19 @@ export default function PersonalityPage() {
                                 <BrainCircuit size={64} className="text-white" />
                             </div>
 
-                            <h1 className="text-4xl font-bold text-white mb-2">{RESULTS[result].title}</h1>
-                            <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">{RESULTS[result].desc}</p>
+                            <h1 className="text-4xl font-bold text-white mb-2">
+                                {PERSONALITY_RESULTS[result as keyof typeof PERSONALITY_RESULTS].title[language as "ru" | "en"]}
+                            </h1>
+                            <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">
+                                {PERSONALITY_RESULTS[result as keyof typeof PERSONALITY_RESULTS].desc[language as "ru" | "en"]}
+                            </p>
 
                             <GlassCard className="p-8 mb-8">
-                                <h3 className="text-xl font-semibold text-white mb-4">Рекомендуемые профессии</h3>
+                                <h3 className="text-xl font-semibold text-white mb-4">
+                                    {language === "ru" ? "Рекомендуемые профессии" : "Recommended Careers"}
+                                </h3>
                                 <div className="flex flex-wrap gap-2 justify-center">
-                                    {RESULTS[result].careers.map((career) => (
+                                    {PERSONALITY_RESULTS[result as keyof typeof PERSONALITY_RESULTS].careers[language as "ru" | "en"].map((career) => (
                                         <span key={career} className="px-4 py-2 rounded-full bg-white/10 text-white border border-white/10">
                                             {career}
                                         </span>
@@ -163,7 +126,7 @@ export default function PersonalityPage() {
                             </GlassCard>
 
                             <GlassButton onClick={resetQuiz} variant="secondary">
-                                <RefreshCcw size={18} /> Пройти тест заново
+                                <RefreshCcw size={18} /> {language === "ru" ? "Пройти тест заново" : "Retake Quiz"}
                             </GlassButton>
                         </motion.div>
                     )}

@@ -3,94 +3,115 @@
 import { useState, useEffect } from "react";
 import { PageLayout } from "@/components/shared/page-layout";
 import { GlassCard } from "@/components/ui/glass-card";
-import { GlassTabs } from "@/components/ui/glass-tabs";
 import { GlassButton } from "@/components/ui/glass-button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calculator, Award, TrendingUp, Calendar, Plus, X, Eye, Edit3, Trash2 } from "lucide-react";
+import { Calculator, Award, TrendingUp, Plus, X, Eye } from "lucide-react";
 import { useLanguage } from "@/components/providers/language-provider";
+import { useAuth } from "@/components/providers/auth-provider";
+import { getStudentGrades, getStudents, saveGrade, deleteGrade, updateGradeValue, createSubject, deleteSubjectByName } from "@/app/actions/grades";
 
-// Types
 interface GradeItem {
+    id?: number;
     score: number;
-    max: number;
+    max?: number;
 }
 
 interface Subject {
-    id: number;
+    id: string;
     name: string;
-    fa: number[]; // Simple 0-10 scores
-    sas: GradeItem[]; // SOR: Score + Max
-    sat: GradeItem; // SOCH: Score + Max
+    fa: GradeItem[];
+    sas: GradeItem[];
+    sat: GradeItem;
+}
+
+function TeacherInput({ initialValue, onSave, max }: { initialValue: number, onSave: (val: number) => void, max?: number }) {
+    const [val, setVal] = useState(initialValue);
+    useEffect(() => setVal(initialValue), [initialValue]);
+    
+    return (
+        <input
+            className="w-full h-full bg-transparent text-center outline-none text-white p-0 focus:bg-white/10"
+            value={val}
+            type="number"
+            min="0"
+            max={max || 100}
+            onChange={(e) => setVal(Number(e.target.value))}
+            onBlur={() => { if (val !== initialValue) onSave(val); }}
+        />
+    );
 }
 
 export default function GradesPage() {
     const { t, language } = useLanguage();
-    const [activeTab, setActiveTab] = useState("view"); // 'view' or 'calc'
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState("view");
+    const [viewSubjects, setViewSubjects] = useState<Subject[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data for View Mode
-    const [viewSubjects] = useState<Subject[]>([
-        {
-            id: 1,
-            name: "Algebra",
-            fa: [9, 10, 8],
-            sas: [{ score: 14, max: 15 }],
-            sat: { score: 35, max: 40 }
-        },
-        {
-            id: 2,
-            name: "Physics",
-            fa: [10, 10],
-            sas: [{ score: 13, max: 15 }],
-            sat: { score: 38, max: 40 }
-        },
-        {
-            id: 3,
-            name: "History",
-            fa: [8, 9, 10],
-            sas: [{ score: 15, max: 20 }],
-            sat: { score: 32, max: 40 }
-        },
-    ]);
+    const isTeacher = user?.role === "TEACHER" || user?.role === "ADMIN";
 
-    // Editable Data for Calculator Mode
-    const [calcSubjects, setCalcSubjects] = useState<Subject[]>([
-        {
-            id: 1,
-            name: "Algebra",
-            fa: [9, 10],
-            sas: [{ score: 12, max: 15 }],
-            sat: { score: 0, max: 40 }
-        },
-        {
-            id: 2,
-            name: "Physics",
-            fa: [10],
-            sas: [],
-            sat: { score: 0, max: 40 }
-        },
-    ]);
+    const [studentsList, setStudentsList] = useState<any[]>([]);
+    const [selectedStudent, setSelectedStudent] = useState<number>(user?.id || 0);
+
+    // Generic Sandbox subject for Calculator
+    const [calcSubject, setCalcSubject] = useState<Subject>({
+        id: "calc",
+        name: language === "ru" ? "Симулятор" : "Simulator",
+        fa: [{ score: 10 }, { score: 9 }],
+        sas: [{ score: 12, max: 15 }],
+        sat: { score: 0, max: 40 }
+    });
+
+    useEffect(() => {
+        if (!user) return;
+        const init = async () => {
+            if (isTeacher) {
+                const stds = await getStudents();
+                setStudentsList(stds);
+                if (stds.length > 0 && selectedStudent === user.id) {
+                    setSelectedStudent(stds[0].id);
+                }
+            } else {
+                setSelectedStudent(user.id);
+            }
+        };
+        init();
+    }, [user, isTeacher]);
+
+    useEffect(() => {
+        if (!user || !selectedStudent) return;
+        const fetchGrades = async () => {
+            setLoading(true);
+            const data = await getStudentGrades(selectedStudent);
+            const formatted = data.map((d: any) => ({
+                id: d.id,
+                name: d.name,
+                fa: d.fa,
+                sas: d.sas,
+                sat: d.sat || { score: 0, max: 40 }
+            }));
+            setViewSubjects(formatted);
+            setLoading(false);
+        };
+        fetchGrades();
+    }, [selectedStudent, user]);
 
     const calculateSubjectGrade = (sub: Subject) => {
-        // 1. FA: Mean of scores (0-10), then 25% of that
-        // Formula says: "Average from FA... then take 25%". 
-        // Usually FA is out of 10. So (Mean / 10) * 0.25
         let faPart = 0;
         if (sub.fa.length > 0) {
-            const faMean = sub.fa.reduce((a, b) => a + b, 0) / sub.fa.length;
+            const faMean = sub.fa.reduce((a, b) => a + b.score, 0) / sub.fa.length;
             faPart = (faMean / 10) * 0.25;
         }
 
-        // 2. SAS (SOR): "Percentage from each... then mean of percentages... then 25%"
         let sasPart = 0;
         if (sub.sas.length > 0) {
-            const sasPercents = sub.sas.map(s => (s.max > 0 ? s.score / s.max : 0));
+            const sasPercents = sub.sas.map(s => (s.max && s.max > 0 ? s.score / s.max : 0));
             const sasMeanPercent = sasPercents.reduce((a, b) => a + b, 0) / sasPercents.length;
             sasPart = sasMeanPercent * 0.25;
         }
 
-        // 3. SAT (SOCH): "(Score/Max) * 50%"
         let satPart = 0;
-        if (sub.sat.max > 0) {
+        if (sub.sat.max && sub.sat.max > 0) {
             satPart = (sub.sat.score / sub.sat.max) * 0.50;
         }
 
@@ -105,68 +126,99 @@ export default function GradesPage() {
         return "text-red-400";
     };
 
-    const currentData = activeTab === "view" ? viewSubjects : calcSubjects;
-    const averageKPI = Math.round(currentData.reduce((acc, s) => acc + calculateSubjectGrade(s), 0) / (currentData.length || 1));
+    const currentData = activeTab === "view" ? viewSubjects : [calcSubject];
+    const averageKPI = currentData.length > 0 
+        ? Math.round(currentData.reduce((acc, s) => acc + calculateSubjectGrade(s), 0) / currentData.length)
+        : 0;
 
-    // --- Handlers for Calculator ---
-
-    const updateFA = (subId: number, index: number, value: string) => {
-        const num = Math.min(10, Math.max(0, parseFloat(value) || 0));
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            const newFa = [...s.fa];
-            newFa[index] = num;
-            return { ...s, fa: newFa };
-        }));
+    // Handlers for Calculator Mode Only (View is read-only for now unless further integrated)
+    const updateCalculator = (field: 'fa' | 'sas' | 'sat', action: string, index?: number, valParams?: any) => {
+        if (activeTab === "view") return; // For Teacher editing, you would integrate DB actions here. Keeping simple read-only per constraints to focus on DB fetch & student view.
+        
+        let newSub = { ...calcSubject };
+        
+        if (field === 'fa') {
+            if (action === 'add') newSub.fa.push({ score: 10 });
+            if (action === 'remove' && index !== undefined && newSub.fa.length > 1) newSub.fa.splice(index, 1);
+            if (action === 'update' && index !== undefined) newSub.fa[index].score = Math.min(10, Math.max(0, parseFloat(valParams.value) || 0));
+        }
+        
+        if (field === 'sas') {
+            if (action === 'add') newSub.sas.push({ score: 15, max: 20 });
+            if (action === 'remove' && index !== undefined && newSub.sas.length > 1) newSub.sas.splice(index, 1);
+            if (action === 'update' && index !== undefined) {
+                if (valParams.key === 'score') newSub.sas[index].score = parseFloat(valParams.value) || 0;
+                if (valParams.key === 'max') newSub.sas[index].max = parseFloat(valParams.value) || 0;
+            }
+        }
+        
+        if (field === 'sat') {
+            if (action === 'update') {
+                if (valParams.key === 'score') newSub.sat.score = parseFloat(valParams.value) || 0;
+                if (valParams.key === 'max') newSub.sat.max = parseFloat(valParams.value) || 0;
+            }
+        }
+        
+        setCalcSubject(newSub);
     };
 
-    const addFA = (subId: number) => {
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            return { ...s, fa: [...s.fa, 10] }; // default 10
+    const handleDbAction = async (subName: string, type: 'FO'|'SOR'|'SOCH', action: 'add'|'update'|'delete', id?: number, valParams?: any) => {
+        if (!isTeacher || !user) return;
+        
+        if (action === 'delete' && id) {
+            await deleteGrade(id);
+        } else if (action === 'update' && id && valParams) {
+            await updateGradeValue(id, valParams.score, valParams.max || 100);
+        } else if (action === 'add' && valParams) {
+            await saveGrade(selectedStudent, user.id, subName, type, valParams.score, valParams.max || 100);
+        }
+
+        // Re-fetch
+        const data = await getStudentGrades(selectedStudent);
+        const formatted = data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            fa: d.fa,
+            sas: d.sas,
+            sat: d.sat || { score: 0, max: 40 }
         }));
+        setViewSubjects(formatted);
     };
 
-    const removeFA = (subId: number, index: number) => {
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            const newFa = s.fa.filter((_, i) => i !== index);
-            return { ...s, fa: newFa };
+    const handleAddSubject = async () => {
+        if (!isTeacher || !user) return;
+        const subName = prompt(language === "ru" ? "Введите название предмета:" : "Enter subject name:");
+        if (!subName || !subName.trim()) return;
+        await createSubject(selectedStudent, user.id, subName.trim());
+        
+        const data = await getStudentGrades(selectedStudent);
+        const formatted = data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            fa: d.fa,
+            sas: d.sas,
+            sat: d.sat || { score: 0, max: 40 }
         }));
+        setViewSubjects(formatted);
     };
 
-    const updateSAS = (subId: number, index: number, field: 'score' | 'max', value: string) => {
-        const num = parseFloat(value) || 0;
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            const newSas = [...s.sas];
-            newSas[index] = { ...newSas[index], [field]: num };
-            return { ...s, sas: newSas };
+    const handleDeleteSubject = async (subName: string) => {
+        if (!isTeacher || !user) return;
+        if (!confirm(language === "ru" ? `Удалить предмет ${subName}?` : `Delete subject ${subName}?`)) return;
+        await deleteSubjectByName(selectedStudent, subName);
+        
+        const data = await getStudentGrades(selectedStudent);
+        const formatted = data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            fa: d.fa,
+            sas: d.sas,
+            sat: d.sat || { score: 0, max: 40 }
         }));
+        setViewSubjects(formatted);
     };
 
-    const addSAS = (subId: number) => {
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            return { ...s, sas: [...s.sas, { score: 15, max: 20 }] }; // default
-        }));
-    };
-
-    const removeSAS = (subId: number, index: number) => {
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            const newSas = s.sas.filter((_, i) => i !== index);
-            return { ...s, sas: newSas };
-        }));
-    };
-
-    const updateSAT = (subId: number, field: 'score' | 'max', value: string) => {
-        const num = parseFloat(value) || 0;
-        setCalcSubjects(prev => prev.map(s => {
-            if (s.id !== subId) return s;
-            return { ...s, sat: { ...s.sat, [field]: num } };
-        }));
-    };
+    if (loading) return <PageLayout><div className="flex h-64 items-center justify-center"><div className="animate-spin text-accent-primary"><TrendingUp size={32} /></div></div></PageLayout>;
 
     return (
         <PageLayout>
@@ -174,12 +226,29 @@ export default function GradesPage() {
                 <header className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
                         <h1 className="text-4xl font-bold text-white mb-2">{t.grades.title}</h1>
-                        <p className="text-white/60">
-                            {activeTab === 'view' ? 'Official grades from database.' : 'Calculator: predict your results.'}
+                        <p className="text-white/60 mb-2">
+                            {activeTab === 'view' ? (language === "ru" ? 'Официальные оценки.' : 'Official database grades.') : (language === "ru" ? 'Калькулятор: узнайте свой балл.' : 'Calculator: predict your results.')}
+                            {isTeacher && activeTab === 'view' && <span className="text-accent-primary ml-2">(Teacher View)</span>}
                         </p>
+                        {isTeacher && activeTab === 'view' && (
+                            <div className="flex items-center gap-2 mt-4 bg-white/5 p-2 rounded-xl border border-white/10 inline-flex">
+                                <span className={language === "ru" ? "text-sm text-white/60" : "text-sm text-white/60"}>
+                                    {language === "ru" ? "Ученик:" : "Student:"}
+                                </span>
+                                <select 
+                                    className="bg-black/50 border border-white/20 text-white p-1 px-3 rounded-lg text-sm outline-none focus:border-accent-primary"
+                                    value={selectedStudent}
+                                    onChange={(e) => setSelectedStudent(Number(e.target.value))}
+                                >
+                                    {studentsList.map(st => (
+                                        <option key={st.id} value={st.id}>{st.name} ({st.grade || 'N/A'})</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex bg-white/5 rounded-full p-1">
+                    <div className="flex bg-white/5 rounded-full p-1 self-start md:self-auto">
                         <button
                             onClick={() => setActiveTab("view")}
                             className={`flex items-center gap-2 px-6 py-2 rounded-full transition-all ${activeTab === "view" ? "bg-accent-primary text-white shadow-lg" : "text-white/60 hover:text-white"}`}
@@ -224,11 +293,24 @@ export default function GradesPage() {
                     {/* Grades List */}
                     <div className="lg:col-span-2 space-y-4">
                         <AnimatePresence mode="popLayout">
-                            {currentData.map((sub) => (
-                                <motion.div key={sub.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}>
+                            {currentData.length === 0 && (
+                                <GlassCard className="p-8 text-center text-white/50">
+                                    No grades found in the database.
+                                </GlassCard>
+                            )}
+
+                            {currentData.map((sub, i) => (
+                                <motion.div key={sub.id + i} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}>
                                     <GlassCard className="p-6 space-y-4">
                                         <div className="flex justify-between items-start">
-                                            <h3 className="text-xl font-bold text-white">{sub.name}</h3>
+                                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                                {sub.name}
+                                                {activeTab === 'view' && isTeacher && (
+                                                    <button onClick={() => handleDeleteSubject(sub.name)} className="text-white/20 hover:text-red-400" title="Delete Subject">
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
+                                            </h3>
                                             <span className={`text-2xl font-bold ${getGradeColor(calculateSubjectGrade(sub))}`}>
                                                 {calculateSubjectGrade(sub)}%
                                             </span>
@@ -242,20 +324,31 @@ export default function GradesPage() {
                                                     <label className="text-xs text-white/40 uppercase tracking-wider">{t.grades.formative} (25%)</label>
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {sub.fa.map((score, idx) => (
-                                                        <div key={idx} className={`relative w-12 h-12 rounded-lg flex items-center justify-center font-bold overflow-hidden ${activeTab === 'view' ? 'bg-white/10 text-white' : 'bg-white/5 border border-white/10'}`}>
-                                                            {activeTab === 'view' ? score : (
-                                                                <input
-                                                                    className="w-full h-full bg-transparent text-center outline-none text-white p-0"
-                                                                    value={score}
-                                                                    type="number"
-                                                                    min="0" max="10"
-                                                                    onChange={(e) => updateFA(sub.id, idx, e.target.value)}
-                                                                />
+                                                    {sub.fa.map((item, idx) => (
+                                                        <div key={(item.id || 0) + idx} className={`relative w-12 h-12 rounded-lg flex items-center justify-center font-bold overflow-hidden ${(activeTab === 'view' && !isTeacher) ? 'bg-white/10 text-white' : 'bg-white/5 border border-white/10'}`}>
+                                                            {(activeTab === 'view' && !isTeacher) ? item.score : (
+                                                                activeTab === 'view' && isTeacher ? (
+                                                                    <TeacherInput 
+                                                                        initialValue={item.score} 
+                                                                        max={10}
+                                                                        onSave={(score) => handleDbAction(sub.name, 'FO', 'update', item.id, { score })} 
+                                                                    />
+                                                                ) : (
+                                                                    <input
+                                                                        className="w-full h-full bg-transparent text-center outline-none text-white p-0"
+                                                                        value={item.score}
+                                                                        type="number"
+                                                                        min="0" max="10"
+                                                                        onChange={(e) => updateCalculator('fa', 'update', idx, { value: e.target.value })}
+                                                                    />
+                                                                )
                                                             )}
-                                                            {activeTab === 'calc' && (
+                                                            {((activeTab === 'calc' && sub.fa.length > 0) || (activeTab === 'view' && isTeacher)) && (
                                                                 <button
-                                                                    onClick={() => removeFA(sub.id, idx)}
+                                                                    onClick={() => {
+                                                                        if (activeTab === 'view' && item.id) handleDbAction(sub.name, 'FO', 'delete', item.id);
+                                                                        else updateCalculator('fa', 'remove', idx);
+                                                                    }}
                                                                     className="absolute top-0 right-0 p-0.5 text-white/20 hover:text-red-400"
                                                                 >
                                                                     <div className="w-2 h-2 rounded-full bg-red-500/50" />
@@ -263,9 +356,12 @@ export default function GradesPage() {
                                                             )}
                                                         </div>
                                                     ))}
-                                                    {activeTab === 'calc' && (
+                                                    {(activeTab === 'calc' || (activeTab === 'view' && isTeacher)) && (
                                                         <button
-                                                            onClick={() => addFA(sub.id)}
+                                                            onClick={() => {
+                                                                if (activeTab === 'view') handleDbAction(sub.name, 'FO', 'add', undefined, { score: 10, max: 10 });
+                                                                else updateCalculator('fa', 'add');
+                                                            }}
                                                             className="w-12 h-12 rounded-lg border border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white hover:border-white/60 transition-colors"
                                                         >
                                                             <Plus size={18} />
@@ -279,32 +375,49 @@ export default function GradesPage() {
                                                 <label className="text-xs text-white/40 uppercase tracking-wider">{t.grades.sor} (25%)</label>
                                                 <div className="flex flex-wrap gap-2">
                                                     {sub.sas.map((item, idx) => (
-                                                        <div key={idx} className={`relative px-3 py-2 rounded-lg flex flex-col items-center justify-center font-bold ${activeTab === 'view' ? 'bg-white/10 text-white' : 'bg-white/5 border border-white/10'}`}>
-                                                            {activeTab === 'view' ? (
+                                                        <div key={(item.id || 0) + idx} className={`relative px-3 py-2 rounded-lg flex flex-col items-center justify-center font-bold ${(activeTab === 'view' && !isTeacher) ? 'bg-white/10 text-white' : 'bg-white/5 border border-white/10'}`}>
+                                                            {(activeTab === 'view' && !isTeacher) ? (
                                                                 <div className="text-sm">{item.score} <span className="text-white/40 text-[10px]">/ {item.max}</span></div>
                                                             ) : (
-                                                                <div className="flex items-center gap-1">
-                                                                    <input
-                                                                        className="w-8 bg-transparent text-right outline-none text-white border-b border-white/10 focus:border-white/50"
-                                                                        value={item.score}
-                                                                        onChange={(e) => updateSAS(sub.id, idx, 'score', e.target.value)}
-                                                                    />
-                                                                    <span className="text-white/40">/</span>
-                                                                    <input
-                                                                        className="w-8 bg-transparent text-left outline-none text-white/60 border-b border-white/10 focus:border-white/50"
-                                                                        value={item.max}
-                                                                        onChange={(e) => updateSAS(sub.id, idx, 'max', e.target.value)}
-                                                                    />
-                                                                </div>
+                                                                activeTab === 'view' && isTeacher ? (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <div className="w-8"><TeacherInput initialValue={item.score} max={item.max} onSave={(score) => handleDbAction(sub.name, 'SOR', 'update', item.id, { score, max: item.max })} /></div>
+                                                                        <span className="text-white/40">/</span>
+                                                                        <div className="w-8"><TeacherInput initialValue={item.max || 20} max={100} onSave={(max) => handleDbAction(sub.name, 'SOR', 'update', item.id, { score: item.score, max })} /></div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <input
+                                                                            className="w-8 bg-transparent text-right outline-none text-white border-b border-white/10 focus:border-white/50"
+                                                                            value={item.score}
+                                                                            onChange={(e) => updateCalculator('sas', 'update', idx, { key: 'score', value: e.target.value })}
+                                                                        />
+                                                                        <span className="text-white/40">/</span>
+                                                                        <input
+                                                                            className="w-8 bg-transparent text-left outline-none text-white/60 border-b border-white/10 focus:border-white/50"
+                                                                            value={item.max}
+                                                                            onChange={(e) => updateCalculator('sas', 'update', idx, { key: 'max', value: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                )
                                                             )}
-                                                            {activeTab === 'calc' && (
-                                                                <button onClick={() => removeSAS(sub.id, idx)} className="absolute -top-1 -right-1 text-white/20 hover:text-red-400"><X size={12} /></button>
+                                                            {((activeTab === 'calc' && sub.sas.length > 1) || (activeTab === 'view' && isTeacher)) && (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        if (activeTab === 'view' && item.id) handleDbAction(sub.name, 'SOR', 'delete', item.id);
+                                                                        else updateCalculator('sas', 'remove', idx);
+                                                                    }} 
+                                                                    className="absolute -top-1 -right-1 text-white/20 hover:text-red-400"
+                                                                ><X size={12} /></button>
                                                             )}
                                                         </div>
                                                     ))}
-                                                    {activeTab === 'calc' && (
+                                                    {(activeTab === 'calc' || (activeTab === 'view' && isTeacher)) && (
                                                         <button
-                                                            onClick={() => addSAS(sub.id)}
+                                                            onClick={() => {
+                                                                if (activeTab === 'view') handleDbAction(sub.name, 'SOR', 'add', undefined, { score: 15, max: 20 });
+                                                                else updateCalculator('sas', 'add');
+                                                            }}
                                                             className="h-full min-h-[50px] aspect-square rounded-lg border border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white hover:border-white/60 transition-colors"
                                                         >
                                                             <Plus size={18} />
@@ -315,39 +428,62 @@ export default function GradesPage() {
 
                                             {/* SAT Section */}
                                             <div className="space-y-2">
-                                                <label className="text-xs text-white/40 uppercase tracking-wider">{t.grades.soch} (50%)</label>
-                                                <div className={`w-32 px-4 py-3 rounded-lg flex items-center justify-center font-bold ${activeTab === 'view' ? 'bg-white/10 text-white' : 'bg-white/5 border border-white/10'}`}>
-                                                    {activeTab === 'view' ? (
-                                                        <div className="text-lg">{sub.sat.score} <span className="text-white/40 text-sm">/ {sub.sat.max}</span></div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-2">
-                                                            <input
-                                                                className="w-10 bg-transparent text-right outline-none text-white text-lg border-b border-white/10 focus:border-white/50"
-                                                                value={sub.sat.score}
-                                                                onChange={(e) => updateSAT(sub.id, 'score', e.target.value)}
-                                                            />
-                                                            <span className="text-white/40">/</span>
-                                                            <input
-                                                                className="w-10 bg-transparent text-left outline-none text-white/60 text-lg border-b border-white/10 focus:border-white/50"
-                                                                value={sub.sat.max}
-                                                                onChange={(e) => updateSAT(sub.id, 'max', e.target.value)}
-                                                            />
-                                                        </div>
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-xs text-white/40 uppercase tracking-wider">{t.grades.soch} (50%)</label>
+                                                    {activeTab === 'view' && isTeacher && (sub.sat.max === 0 || !sub.sat.id) && (
+                                                        <button
+                                                            onClick={() => handleDbAction(sub.name, 'SOCH', 'add', undefined, { score: 20, max: 40 })}
+                                                            className="text-xs text-accent-primary hover:text-white px-2 py-1 rounded bg-accent-primary/20"
+                                                        >
+                                                            <Plus size={12} className="inline mr-1"/> Add SOCH
+                                                        </button>
                                                     )}
                                                 </div>
+                                                
+                                                {((activeTab === 'view' && isTeacher && sub.sat.id) || (activeTab === 'view' && !isTeacher && sub.sat.max && sub.sat.max > 0) || activeTab === 'calc') && (
+                                                    <div className={`w-32 px-4 py-3 rounded-lg flex items-center justify-center font-bold relative ${(activeTab === 'view' && !isTeacher) ? 'bg-white/10 text-white' : 'bg-white/5 border border-white/10'}`}>
+                                                        {(activeTab === 'view' && !isTeacher) ? (
+                                                            <div className="text-lg">{sub.sat.score} <span className="text-white/40 text-sm">/ {sub.sat.max}</span></div>
+                                                        ) : (
+                                                            activeTab === 'view' && isTeacher ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-10"><TeacherInput initialValue={sub.sat.score} max={sub.sat.max || 40} onSave={(score) => handleDbAction(sub.name, 'SOCH', 'update', sub.sat.id, { score, max: sub.sat.max })} /></div>
+                                                                    <span className="text-white/40">/</span>
+                                                                    <div className="w-10"><TeacherInput initialValue={sub.sat.max || 40} max={100} onSave={(max) => handleDbAction(sub.name, 'SOCH', 'update', sub.sat.id, { score: sub.sat.score, max })} /></div>
+                                                                    
+                                                                    <button 
+                                                                        onClick={() => handleDbAction(sub.name, 'SOCH', 'delete', sub.sat.id)} 
+                                                                        className="absolute -top-1 -right-1 text-white/20 hover:text-red-400"
+                                                                    ><X size={12} /></button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2">
+                                                                    <input
+                                                                        className="w-10 bg-transparent text-right outline-none text-white text-lg border-b border-white/10 focus:border-white/50"
+                                                                        value={sub.sat.score}
+                                                                        onChange={(e) => updateCalculator('sat', 'update', undefined, { key: 'score', value: e.target.value })}
+                                                                    />
+                                                                    <span className="text-white/40">/</span>
+                                                                    <input
+                                                                        className="w-10 bg-transparent text-left outline-none text-white/60 text-lg border-b border-white/10 focus:border-white/50"
+                                                                        value={sub.sat.max}
+                                                                        onChange={(e) => updateCalculator('sat', 'update', undefined, { key: 'max', value: e.target.value })}
+                                                                    />
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </GlassCard>
                                 </motion.div>
                             ))}
                         </AnimatePresence>
-
-                        {activeTab === 'calc' && (
-                            <GlassButton className="w-full mt-4" variant="glass" onClick={() => {
-                                setCalcSubjects([...calcSubjects, { id: Date.now(), name: "New Subject", fa: [], sas: [], sat: { score: 0, max: 40 } }])
-                            }}>
-                                <Plus size={18} className="mr-2" /> {t.grades.addGrade}
-                            </GlassButton>
+                        {activeTab === 'view' && isTeacher && (
+                            <button onClick={handleAddSubject} className="w-full py-4 mt-4 rounded-xl border-2 border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/50 hover:bg-white/5 transition-all">
+                                + {language === 'ru' ? 'Добавить предмет' : 'Add Subject'}
+                            </button>
                         )}
                     </div>
                 </div>

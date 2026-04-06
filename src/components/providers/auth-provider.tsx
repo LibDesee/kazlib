@@ -2,22 +2,24 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { USERS } from "@/lib/data/users";
+import { loginUser, getUserProfile } from "@/app/actions/auth";
 
-interface UserProfile {
+export interface UserProfile {
+    id: number;
     name: string;
-    role: "Student" | "Teacher" | "Admin";
-    grade: string;
-    school: string;
-    avatar: string;
-    email: string;
-    phone: string;
-    interests: string[];
+    role: "STUDENT" | "TEACHER" | "ADMIN";
+    grade: string | null;
+    school: string | null;
+    avatar: string | null;
+    email: string | null;
+    phone: string | null;
+    interests: string | null;
+    language: string;
 }
 
 interface AuthContextType {
     user: UserProfile | null;
-    login: (name: string) => void;
+    login: (name: string, password?: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => void;
     updateProfile: (data: Partial<UserProfile>) => void;
     isAuthenticated: boolean;
@@ -25,49 +27,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock initial user data
-const MOCK_USER: UserProfile = {
-    name: "Alikhan B.",
-    role: "Student",
-    grade: "11A",
-    school: "NIS PhM Almaty",
-    avatar: "AB",
-    email: "alikhan.b@school.kz",
-    phone: "+7 777 123 45 67",
-    interests: ["Math", "Physics", "basketball"],
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserProfile | null>(null);
     const router = useRouter();
     const pathname = usePathname();
 
-    // Check for existing session (mock)
     useEffect(() => {
         const storedUser = localStorage.getItem("kazlib_user");
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+                const parsed = JSON.parse(storedUser);
+                getUserProfile(parsed.id).then(res => {
+                    if (res.success && res.user) {
+                        setUser(res.user as UserProfile);
+                    } else {
+                        localStorage.removeItem("kazlib_user");
+                        setUser(null);
+                        router.push("/login");
+                    }
+                });
+            } catch (e) {
+                localStorage.removeItem("kazlib_user");
+                router.push("/login");
+            }
         }
-    }, []);
+    }, [router]);
 
-    // Protect Routes
     useEffect(() => {
-        const isLoginPage = pathname === "/login";
-        const isPublic = pathname === "/about"; // Example public route if needed
-
-        if (!user && !isLoginPage && !isPublic) {
-            // Allow a small delay for hydration check or just redirect
-            // For MVP, we'll wait for the initial effect to run. 
-            // However, relying on localstorage effect might cause a flash.
-            // We'll trust the user state. If user is null and we are not on login, redirect.
-            // But we need to be careful about the initial render where user is null before useEffect runs.
-            // We can check localStorage synchronously if possible, or use a "loading" state.
-        }
-    }, [user, pathname]);
-
-    // Better Route Protection Logic handling the async nature of useEffect
-    useEffect(() => {
-        // If we are on client
         const stored = localStorage.getItem("kazlib_user");
         if (!stored && pathname !== "/login") {
             router.push("/login");
@@ -76,24 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [pathname, router]);
 
-    const login = (name: string) => {
-        // Find matching predefined user
-        const predefinedUser = USERS.find(u => u.name.toLowerCase() === name.toLowerCase());
-        
-        const newUser: UserProfile = predefinedUser ? {
-            name: predefinedUser.name,
-            role: predefinedUser.role as "Student" | "Teacher" | "Admin",
-            grade: predefinedUser.grade || "",
-            school: predefinedUser.school || "",
-            avatar: predefinedUser.avatar,
-            email: predefinedUser.email || "",
-            phone: predefinedUser.phone || "",
-            interests: predefinedUser.interests || [],
-        } : { ...MOCK_USER, name };
-
-        setUser(newUser);
-        localStorage.setItem("kazlib_user", JSON.stringify(newUser));
-        router.push("/");
+    const login = async (name: string, password?: string) => {
+        const res = await loginUser(name, password);
+        if (res.success && res.user) {
+            const newUser = res.user as UserProfile;
+            setUser(newUser);
+            localStorage.setItem("kazlib_user", JSON.stringify(newUser));
+            router.push("/");
+            return { success: true };
+        }
+        return { success: false, error: res.error };
     };
 
     const logout = () => {

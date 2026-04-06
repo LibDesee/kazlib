@@ -36,8 +36,7 @@ export function Navigation() {
         { name: t.nav.personality, href: "/personality", icon: BrainCircuit },
         { name: t.nav.grades, href: "/grades", icon: Calculator },
         { name: t.nav.school, href: "/school", icon: School },
-        { name: t.nav.social, href: "/social", icon: MessageCircle },
-        ...(user?.role === "Teacher" ? [{ name: "Teacher", href: "/teacher", icon: GraduationCap }] : []),
+        ...(user?.role === "ADMIN" ? [{ name: "Admin", href: "/admin", icon: Settings }] : []),
     ];
 
     if (!user || pathname === "/login") return null;

@@ -16,6 +16,15 @@ async function listModels() {
     }
 
     try {
+        console.log("Testing gemini-2.0-flash...");
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const result = await model.generateContent("Hi");
+        console.log("Success with gemini-2.0-flash");
+    } catch (e: any) {
+        console.error("Failed with gemini-2.0-flash:", e.message);
+    }
+
+    try {
         console.log("Testing gemini-1.5-flash-latest...");
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
         const result = await model.generateContent("Hi");

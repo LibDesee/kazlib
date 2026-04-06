@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  password  String?
+  role      String   // "STUDENT", "TEACHER", "ADMIN"
+  grade     String?  // Class name like "11A" for students
+  school    String?
+  avatar    String?
+  email     String?
+  phone     String?
+  bio       String?
+  interests String?  // Store as JSON or comma-separated string
+  language  String   @default("RU") // "RU" or "EN"
+
+  // Relations
+  gradesReceived Grade[] @relation("StudentGrades")
+  gradesGiven    Grade[] @relation("TeacherGrades")
+  
+  messagesSent     Message[] @relation("MessagesSent")
+  messagesReceived Message[] @relation("MessagesReceived")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Grade {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  teacherId Int
+  subject   String
+  type      String   // "FO", "SOR", "SOCH"
+  value     Int
+  max       Int      @default(100) // Maximum possible score for this grade
+  
+  student   User     @relation("StudentGrades", fields: [studentId], references: [id])
+  teacher   User     @relation("TeacherGrades", fields: [teacherId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ScheduleSlot {
+  id        Int      @id @default(autoincrement())
+  dayOfWeek Int      // 1 (Monday) to 5 (Friday)
+  slotOrder Int      // 1 to 8 (Lesson number in the day)
+  subject   String
+  room      String?
+  class     String   // "11A", "10B", etc.
+  teacherId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  category    String   // "Hot", "Drinks", "Snacks"
+  price       Int      // in Tenge
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String
+
+  sender   User @relation("MessagesSent", fields: [senderId], references: [id])
+  receiver User @relation("MessagesReceived", fields: [receiverId], references: [id])
+
+  createdAt DateTime @default(now())
+}

@@ -16,7 +16,7 @@ import { X, Calendar as CalIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedNews, setSelectedNews] = useState<any>(null);
 
   const features = [
@@ -130,17 +130,17 @@ export default function Home() {
                     <div className="h-48 overflow-hidden">
                         <img 
                             src={item.image} 
-                            alt={item.title} 
+                            alt={item.title[language as keyof typeof item.title] || item.title.en} 
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                     </div>
                     <div className="p-6 flex flex-col flex-1 gap-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-accent-primary uppercase tracking-widest">{item.category}</span>
+                            <span className="text-xs font-bold text-accent-primary uppercase tracking-widest">{item.category[language as keyof typeof item.category] || item.category.en}</span>
                             <span className="text-xs text-white/40 flex items-center gap-1"><CalIcon size={12}/> {item.date}</span>
                         </div>
-                        <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-accent-primary transition-colors">{item.title}</h3>
-                        <p className="text-white/50 text-sm line-clamp-3">{item.excerpt}</p>
+                        <h3 className="text-xl font-bold text-white line-clamp-2 group-hover:text-accent-primary transition-colors">{item.title[language as keyof typeof item.title] || item.title.en}</h3>
+                        <p className="text-white/50 text-sm line-clamp-3">{item.excerpt[language as keyof typeof item.excerpt] || item.excerpt.en}</p>
                         <div className="mt-auto pt-4 flex items-center text-accent-secondary text-sm font-semibold group-hover:gap-2 transition-all">
                             {t.news.readMore} <ArrowRight size={16} className="ml-1"/>
                         </div>
@@ -177,15 +177,15 @@ export default function Home() {
                     <div className="h-64 overflow-hidden relative">
                         <img 
                             src={selectedNews.image} 
-                            alt={selectedNews.title} 
+                            alt={selectedNews.title[language as keyof typeof selectedNews.title] || selectedNews.title.en} 
                             className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
                         <div className="absolute bottom-6 left-8">
                              <span className="px-3 py-1 rounded-full bg-accent-primary text-white text-xs font-bold uppercase tracking-wider mb-2 inline-block">
-                                {selectedNews.category}
+                                {selectedNews.category[language as keyof typeof selectedNews.category] || selectedNews.category.en}
                              </span>
-                             <h2 className="text-3xl font-bold text-white leading-tight">{selectedNews.title}</h2>
+                             <h2 className="text-3xl font-bold text-white leading-tight">{selectedNews.title[language as keyof typeof selectedNews.title] || selectedNews.title.en}</h2>
                         </div>
                     </div>
 
@@ -197,7 +197,7 @@ export default function Home() {
                         </div>
                         
                         <div className="text-white/80 leading-relaxed space-y-4">
-                            {selectedNews.content.split('\n').map((para: string, i: number) => (
+                            {(selectedNews.content[language as keyof typeof selectedNews.content] || selectedNews.content.en).split('\n').map((para: string, i: number) => (
                                 <p key={i}>{para}</p>
                             ))}
                         </div>

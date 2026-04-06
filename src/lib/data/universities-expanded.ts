@@ -1,7 +1,6 @@
 import { LocalUniversity, InternationalUniversity } from "./universities";
 
 export const LOCAL_UNIVERSITIES: LocalUniversity[] = [
-    { name: "Nazarbayev University", city: "Astana", rank: 1, chance: 85, type: "Grant", desc: "Top research university, English medium.", price: "Free (Grant)", site: "nu.edu.kz" },
     { name: "KBTU", city: "Almaty", rank: 2, chance: 92, type: "Grant", desc: "Leading technical university in IT and Oil & Gas.", price: "1.2M ₸/yr", site: "kbtu.kz" },
     { name: "SDU", city: "Almaty", rank: 3, chance: 78, type: "Paid", desc: "Suleyman Demirel University, strong in Philology and Engineering.", price: "1.5M ₸/yr", site: "sdu.edu.kz" },
     { name: "KazNU", city: "Almaty", rank: 4, chance: 95, type: "Grant", desc: "Al-Farabi Kazakh National University, oldest and largest.", price: "Free (Grant)", site: "kaznu.kz" },
@@ -34,6 +33,7 @@ export const LOCAL_UNIVERSITIES: LocalUniversity[] = [
 ];
 
 export const INTERNATIONAL_UNIVERSITIES: InternationalUniversity[] = [
+    { name: "Nazarbayev University", country: "Kazakhstan", rank: 0, worldRank: "Top 500", desc: "Top research university, English medium.", price: "Free (Grant)", site: "nu.edu.kz" },
     { name: "MIT", country: "USA", rank: 1, worldRank: "#1", desc: "Massachusetts Institute of Technology.", price: "$60,000/yr", site: "mit.edu" },
     { name: "Oxford", country: "UK", rank: 2, worldRank: "#4", desc: "University of Oxford, oldest in English speaking world.", price: "£30,000/yr", site: "ox.ac.uk" },
     { name: "Stanford", country: "USA", rank: 3, worldRank: "#2", desc: "Stanford University, located in Silicon Valley.", price: "$58,000/yr", site: "stanford.edu" },

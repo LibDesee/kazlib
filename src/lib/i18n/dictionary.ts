@@ -17,7 +17,7 @@ export const dictionary = {
         landing: {
             heroTag: "The Future of Student Education",
             heroTitlePrefix: "KazLib —",
-            heroTitleSuffix: "Будущее учеников",
+            heroTitleSuffix: "Future of Students",
             heroDescription: "Your all-in-one ecosystem for academic success, career planning, and student life in Kazakhstan.",
             getStarted: "Get Started",
             learnMore: "Learn More",
@@ -136,6 +136,19 @@ export const dictionary = {
             title: "News & Events",
             readMore: "Read more",
             close: "Close"
+        },
+        roadmap: {
+            title: "AI Roadmap Generator",
+            desc: "Enter your dream career or goal, and our AI will map out the path for you.",
+            placeholder: "e.g. Become a Surgeon, Data Scientist, Artist...",
+            generateBtn: "Generate Roadmap",
+            generatingBtn: "Generating Path...",
+            saveBtn: "Save Roadmap",
+            savedTitle: "Saved Roadmaps",
+            deleteBtn: "Delete",
+            viewBtn: "View",
+            noSaved: "No saved roadmaps yet.",
+            error: "An error occurred while generating the path. Please ensure the API key is set."
         },
         prediction: {
             title: "Admission Chance Prediction",
@@ -281,6 +294,19 @@ export const dictionary = {
             title: "Новости и События",
             readMore: "Читать далее",
             close: "Закрыть"
+        },
+        roadmap: {
+            title: "Генератор Карьерной Карты ИИ",
+            desc: "Введите профессию или цель, и наш мощный ИИ разработает для вас пошаговый план.",
+            placeholder: "напр. Стать хирургом, дата-саентистом, артистом...",
+            generateBtn: "Создать План",
+            generatingBtn: "Создание Плана...",
+            saveBtn: "Сохранить План",
+            savedTitle: "Сохраненные планы",
+            deleteBtn: "Удалить",
+            viewBtn: "Смотреть",
+            noSaved: "Пока нет сохраненных планов.",
+            error: "Произошла ошибка при генерации пути. Убедитесь, что API ключ установлен."
         },
         prediction: {
             title: "Анализ шансов поступления",

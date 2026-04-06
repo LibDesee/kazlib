@@ -39,16 +39,26 @@ export function MiniChat() {
         setMessages(prev => [...prev, newUserMessage]);
         setMessage("");
 
-        // Simulate AI response for now (would call /api/chat in production)
-        setTimeout(() => {
-            const botResponse: Message = {
-                id: messages.length + 2,
-                text: "Я анализирую твой запрос... Как ИИ-помощник, я могу помочь тебе с выбором ВУЗа, расчетом шансов на грант или планированием карьеры.",
-                sender: "bot",
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            setMessages(prev => [...prev, botResponse]);
-        }, 1000);
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message, history: messages })
+            });
+            const data = await res.json();
+            
+            if (data.reply) {
+                const botResponse: Message = {
+                    id: messages.length + 2,
+                    text: data.reply,
+                    sender: "bot",
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+                setMessages(prev => [...prev, botResponse]);
+            }
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     if (!user) return null;

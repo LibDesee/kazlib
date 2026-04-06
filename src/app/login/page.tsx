@@ -8,24 +8,23 @@ import { GlassButton } from "@/components/ui/glass-button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { USERS } from "@/lib/data/users";
-
 export default function LoginPage() {
     const { login } = useAuth();
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
         
-        const userFound = USERS.find(u => u.name.toLowerCase() === name.toLowerCase() && "123456" === password);
-        
-        if (userFound) {
-            login(userFound.name);
-        } else {
-            setError("Invalid username or password. Try 'Aizere M.' with '123456'");
+        try {
+            const res = await login(name, password);
+            if (!res.success) {
+                setError(res.error || "Неизвестная ошибка авторизации");
+            }
+        } catch (err: any) {
+            setError(err.message || "Ошибка авторизации");
         }
     };
 
