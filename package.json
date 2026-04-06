@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "NODE_EXTRA_CA_CERTS=/home/nurik/Downloads/Unified_State_Internet_Access_Gateway_RtnCtVF.cer next dev",
     "build": "NODE_EXTRA_CA_CERTS=/home/nurik/Downloads/Unified_State_Internet_Access_Gateway_RtnCtVF.cer next build",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "NODE_EXTRA_CA_CERTS=/home/nurik/Downloads/Unified_State_Internet_Access_Gateway_RtnCtVF.cer next start",
     "lint": "eslint"
   },
